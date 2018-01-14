@@ -4,7 +4,7 @@ Script to fetch blog posts from steemit.com and append to div on own site.
 ## Details
 Javascript that fetches blog posts from steemit.com, a blockchain based community. Script looks for specific user and tags, then formats the markup to html and adds 5 posts to div tag on page. When user reaches end of page, it repeats and loads 5 new posts.
 
-The script is as used on https://spelmakare.se/news/ so specific for my needs. As it is fairly simple and written top to bottom, I have uploaded it in case it could be of use to anyone else. I myself tend to find useful info from sources like this.
+The script is as used on https://spelmakare.se/news so specific for my needs. As it is fairly simple and written top to bottom, I have uploaded it in case it could be of use to anyone else. I myself tend to find useful info from sources like this.
 
 ## Dependencies
 * https://steemit.com account
