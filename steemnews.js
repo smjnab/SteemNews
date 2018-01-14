@@ -156,6 +156,12 @@ function GetSteemDiscussions() {
                     '<b>$2</b>'
                 );
 
+                /// Make #->##### into bold
+                bodyString = bodyString.replace(
+                    /(\#{1,5} )([a-zA-Z0-9_\-:;./!?&=+~ ]*)(<br \/>)/ig,
+                    '<b>$2</b>$3'
+                );
+
                 /// Remove too much white lines after span.
                 bodyString = bodyString.replace(/<\/span><br \/><br \/>/ig, "<\/span><br \/>");
                 bodyString = bodyString.replace(/<\/span><br \/><br \/><br \/>/ig, "<\/span><br \/>");
