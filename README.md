@@ -10,6 +10,7 @@ The script is as used on https://spelmakare.se/news so specific for my needs. As
 * https://steemit.com account
 * https://jquery.com/
 * https://github.com/cure53/DOMPurify
+* https://github.com/showdownjs
 * https://jnordberg.github.io/dsteem/
 
 ## Usage
@@ -17,6 +18,7 @@ Create a skeleton html file download steemnews.js + dependencies (or link to cdn
 ```
 <script src="jquery.min.js"></script>
 <script src="purify.min.js"></script>
+<script src="showdown.min.js"></script>
 <script src="dsteem.js"></script>
 <script src="steemnews.js"></script>
 ```
@@ -46,12 +48,23 @@ That's it!
 <body>
   <div id="main">
     <div class="inner">
-      <h1>Latest News &amp; Blog Posts</h1>
-      <p>
-          <b>Loading ...</b>
-      </p>
-      <!-- Filled from Steemit -->
-    </div>
+        <h1>Latest News &amp; Blog Posts</h1>
+
+        <div id="selectNews">
+            <input id="radioNewsBoth" name="radioNews" type="radio">
+            <label for="radioNewsBoth">Both</label>
+            <input id="radioNewsNews" name="radioNews" type="radio" checked>
+            <label for="radioNewsNews">News</label>
+            <input id="radioNewsBlog" name="radioNews" type="radio">
+            <label for="radioNewsBlog">Blog</label>
+        </div>
+
+        <!-- Filled from Steemit -->
+        <div class="innerNews">
+            <p>
+                <b>Loading ...</b>
+            </p>
+        </div>
   </div>
 </body>
 </html>
