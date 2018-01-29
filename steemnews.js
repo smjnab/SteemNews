@@ -15,13 +15,24 @@ const tagNews = "A tag you want to use as news."; /// I have a news tag, this se
 const tagBlog = "Additional tag to use as news."; /// I have a blog tag, this selects them and indicates "Blog" on post.
 
 var lastPost = "";  /// The perm link of last post. Used to load more news if wanted.
-var loadNewsOnScroll = false;   ///Makes sure only one load new news triggers at last post.
+var loadNewsOnScroll = false;   /// Makes sure only one load new news triggers at last post.
+var loadedFromScroll = false;   /// Check for knowing if posts has been loading from scrolling to bottom.
 
 var postType = "";  ///Show blog & post or only one of them.
 var failCount = 0;  /// Switch to secondary and third server on fails.
 
+var steemResponse = ""; /// Saves the response from steemit until page reloaded.
+
+/// On page load/reload always reset to news only.
+$(document).ready(function () {
+
+    $("#radioNewsNews").prop("checked", true);
+
+    postType = "radioNewsNews";
+});
+
 /// Fetch news on first load.
-GetSteemDiscussions("");
+GetSteemDiscussions(true);
 
 /// When reaching last news post, load additional news.
 $(window).scroll(function () {
@@ -29,8 +40,9 @@ $(window).scroll(function () {
 
     if ($(window).scrollTop() >= $(document).height() - $(window).height() - ($(document).height() / 5)) {
         loadNewsOnScroll = false;
+        loadedFromScroll = true;
 
-        GetSteemDiscussions();
+        GetSteemDiscussions(true);  /// Force fetch new posts from steemit as need new posts.
     }
 });
 
@@ -41,11 +53,12 @@ $(document).on("click", "#radioNewsBoth,#radioNewsNews,#radioNewsBlog", function
 
     lastPost = "";  //Reset last post as changing type of posts to show.
 
-    GetSteemDiscussions();  /// Update post listing.
+    GetSteemDiscussions(loadedFromScroll);  /// If having scroll to bottom, force new query from steemit to get from start.
+    loadedFromScroll = false;
 });
 
 /// Big pile of function for everything steem.
-function GetSteemDiscussions() {
+function GetSteemDiscussions(querySteemit) {
 
     var discussionQuery; /// Json with query for steem posts to get.
 
@@ -54,7 +67,9 @@ function GetSteemDiscussions() {
     else discussionQuery = { tag: author, limit: pagePostFetchLimit };
 
     /// Get blog posts from Steemit
-    client.database.getDiscussions("blog", discussionQuery).then(function (discussions) {
+    if (querySteemit) steemResponse = client.database.getDiscussions("blog", discussionQuery);
+
+    steemResponse.then(function (discussions) {
         /// Style of the date of each post.
         var dateStyle = { year: "numeric", month: "long", day: "numeric" };
         var dateTimeFormat = new Intl.DateTimeFormat("en-EN", dateStyle);
@@ -68,12 +83,10 @@ function GetSteemDiscussions() {
         /// Go over fetched discussions and take the posts that matches what we want.
         var blogPosts = [];
 
-        /// Always use only news post type if no set.
-        if (postType == "") postType = "radioNewsNews";
-
         for (i = 0; i < discussions.length; i++) {
             blogPost = discussions[i];  ///Each blog post.
-            var metaTags = JSON.parse(discussions[i].json_metadata).tags; /// Each additional tag
+
+            var metaTags = JSON.parse(blogPost.json_metadata).tags; /// Each additional tag
             var tagFound = false;
 
             /// Check main and additional tags for the tags we want.
@@ -107,7 +120,7 @@ function GetSteemDiscussions() {
                 /// Convert markdown to html
                 var converter = new showdown.Converter();
 
-                converter.setFlavor("github");
+                converter.setOption("noHeaderId", "true");
                 converter.setOption("simplifiedAutoLink", "true");
                 converter.setOption("simpleLineBreaks", "true");
                 converter.setOption("headerLevelStart", "2");
@@ -115,6 +128,10 @@ function GetSteemDiscussions() {
                 converter.setOption("ghMentionsLink", "https://steemit.com/@{u}");
 
                 bodyString = converter.makeHtml(bodyString);
+
+                /// Change any h1 to h2
+                bodyString = bodyString.replace(/<h1>/ig, "<h2>");
+                bodyString = bodyString.replace(/<\/h1>/ig, "</h2>");
 
                 /// Remove any <hr> tags.
                 bodyString = bodyString.replace(/<hr>/ig, "");
@@ -131,9 +148,16 @@ function GetSteemDiscussions() {
                     '<span class="image tweak"><img src="$1"  alt="$2" /></span>'
                 );
 
+                /// Make urls in text into a href
+                bodyString = bodyString.replace(
+                    /([^"])(https?:\/\/[a-zA-Z0-9.-]*[a-zA-Z0-9/_:@#~!?=&%*-]*)([^.!?]{0,1})/ig,
+                    '$1<a href="$2">$2</a>$3'
+                );
+
                 /// Indicate what type of post: news or blog.
                 var metaTags = JSON.parse(blogPost.json_metadata).tags;
                 var blogType;
+
                 if (blogPost.category == tagNews || metaTags.indexOf(tagNews) >= 0) blogType = "News"
                 else blogType = "Blog"
 
@@ -156,7 +180,8 @@ function GetSteemDiscussions() {
             }
         });
 
-        loadNewsOnScroll = true; /// Allow checking if reaching end of news to trigger fetch of more.
+        if (blogPosts.length > 0) loadNewsOnScroll = true; /// Allow checking if reaching end of news to trigger fetch of more.
+    
     }, function (error) {
         if (error.message.toLowerCase().includes("network") && failCount < 3) {
             /// Try again with second server.
@@ -174,7 +199,7 @@ function GetSteemDiscussions() {
                 client = new dsteem.Client(fourthServer, { timeout: 10000 });
             }
 
-            GetSteemDiscussions();
+            GetSteemDiscussions(true); /// Force fetch new posts from steemit.
 
             failCount++;
         }
