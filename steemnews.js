@@ -123,9 +123,18 @@ function GetSteemDiscussions(querySteemit) {
                 converter.setOption("noHeaderId", "true");
                 converter.setOption("simplifiedAutoLink", "true");
                 converter.setOption("simpleLineBreaks", "true");
-                converter.setOption("headerLevelStart", "2");
+                converter.setOption("headerLevelStart", "1");
                 converter.setOption("ghMentions", "true");
                 converter.setOption("ghMentionsLink", "https://steemit.com/@{u}");
+
+                // Steepshot specific.
+                if (bodyString.indexOf("Steepshot") >= 0) {
+                    /// Remove weird "hr" from steepshot.
+                    bodyString = bodyString.replace(/[\- ]{10,40}/ig, "");
+
+                    // Add line between Steepshot footer and comment.
+                    bodyString += "<br /><br />";
+                }
 
                 bodyString = converter.makeHtml(bodyString);
 
@@ -138,8 +147,8 @@ function GetSteemDiscussions(querySteemit) {
 
                 /// Make #taginto links to steemit.com tags
                 bodyString = bodyString.replace(
-                    /([^/])(#[a-z0-9-]{2,50})/ig,
-                    '$1<a href="https://steemit.com/trending/$2" target="_blank">$2</a>'
+                    /([^/])(#)([a-z0-9-]{2,50})/ig,
+                    '$1<a href="https://steemit.com/trending/$3" target="_blank">$2$3</a>'
                 );
 
                 /// Add class to any <img tags.
@@ -166,7 +175,7 @@ function GetSteemDiscussions(querySteemit) {
                 var postURL = DOMPurify.sanitize(blogPost.url, { SAFE_FOR_JQUERY: true });
 
                 /// Append each news post to the main inner div.
-               $("#main .innerNews").append(
+                $("#main .innerNews").append(
                     `<div class="newsHead"><ul class="alt"><li><h2 class="h2m">${postTitle}</h2></li>
                             <li><sup><i>${blogType} published ${creationDate}</i></sup></li></ul></div>
                             ${bodyString}
@@ -181,7 +190,7 @@ function GetSteemDiscussions(querySteemit) {
         });
 
         if (blogPosts.length > 0) loadNewsOnScroll = true; /// Allow checking if reaching end of news to trigger fetch of more.
-    
+
     }, function (error) {
         if (error.message.toLowerCase().includes("network") && failCount < 3) {
             /// Try again with second server.
